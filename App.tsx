@@ -662,7 +662,7 @@ const LandingPage: React.FC<{ onLaunch: () => void }> = ({ onLaunch }) => {
         <div className="h-full w-full bg-[#111827] text-white flex flex-col">
             <header className="absolute top-0 left-0 right-0 p-4 z-10">
                 <nav className="max-w-7xl mx-auto flex justify-between items-center px-4">
-                    <div className="text-xl font-bold">MMR Pathfinder</div>
+                    <div className="text-xl font-bold">Mumbai Metro Pathfinder</div>
                     {/* Add nav links here if needed */}
                 </nav>
             </header>
@@ -692,6 +692,10 @@ const LandingPage: React.FC<{ onLaunch: () => void }> = ({ onLaunch }) => {
 
             <footer className="w-full p-4 text-center text-xs text-gray-500">
                 <p>&copy; {new Date().getFullYear()} MMR Pathfinder. All rights reserved.</p>
+                <div className="mt-2">
+                    <p>Harshil Kotadia</p>
+                    <p>harshil.kotadia@gmail.com</p>
+                </div>
             </footer>
         </div>
     );

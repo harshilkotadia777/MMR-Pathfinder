@@ -601,9 +601,9 @@ const PathDisplay: React.FC<{
     viaStops: ViaStop[];
     getStationById: (id: string) => Station | undefined;
 }> = ({ path, viaStops, getStationById }) => {
-    const lineColors = { blue: 'border-blue-500', yellow: 'border-yellow-400', red: 'border-red-500', aqua: 'border-cyan-400' };
-    const lineTextColors = { blue: 'text-blue-600', yellow: 'text-yellow-600', red: 'text-red-600', aqua: 'text-cyan-600' };
-    const lineBGColors = { blue: 'bg-blue-500', yellow: 'bg-yellow-400', red: 'bg-red-500', aqua: 'bg-cyan-400' };
+    const lineColors: Record<string, string> = { blue: 'border-blue-500', yellow: 'border-yellow-400', red: 'border-red-500', aqua: 'border-cyan-400' };
+    const lineTextColors: Record<string, string> = { blue: 'text-blue-600', yellow: 'text-yellow-600', red: 'text-red-600', aqua: 'text-cyan-600' };
+    const lineBGColors: Record<string, string> = { blue: 'bg-blue-500', yellow: 'bg-yellow-400', red: 'bg-red-500', aqua: 'bg-cyan-400' };
     
     const viaStopsInPath = viaStops.map(v => v.stationId).filter((id): id is string => id !== null);
 

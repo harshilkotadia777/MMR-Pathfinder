@@ -11,7 +11,7 @@ An intelligent and visually rich route planner for the Mumbai Metro network. Thi
 ## ✨ Features
 
 - **Interactive Metro Map:** A dynamic and zoomable map of the Mumbai Metro network, built with Leaflet.js.
-- **Shortest Route Calculation:** Implements Slime Mold Algorithm to find the most efficient route between any two stations, factoring in distance and line-change penalties.
+- **Shortest Route Calculation:** Implements Dijkstra's algorithm to find the most efficient route between any two stations, factoring in distance and line-change penalties.
 - **Multi-Stop Journeys:** Plan complex trips with one or more intermediate "via" stops.
 - **Dynamic Station Selection:** User-friendly searchable dropdowns make it easy to select start, end, and via stations.
 - **Map-Based Interaction:**
@@ -29,7 +29,7 @@ An intelligent and visually rich route planner for the Mumbai Metro network. Thi
 - **Frontend:** React, TypeScript
 - **Mapping:** Leaflet.js
 - **Styling:** Tailwind CSS
-- **Pathfinding Algorithm:** Slime Mold Algorithm implemented in TypeScript
+- **Pathfinding Algorithm:** Dijkstra's Algorithm implemented in TypeScript
 - **Build Tool:** Vite (or similar modern bundler like esbuild)
 
 ---
@@ -102,7 +102,7 @@ The core logic of the application revolves around a graph data structure and a c
 
 1.  **Graph Representation:** The Mumbai Metro network is modeled as a graph, where each station is a **node** and each connection between stations is an **edge**. The `constants.ts` file contains this data.
 2.  **Edge Weighting:** The "cost" (or weight) of traversing an edge is calculated using the Haversine formula for geographical distance. A small penalty is added for interchanges to favor routes with fewer line changes.
-3.  **Pathfinding:** When a user requests a route, **Slime Mold Algorithm** is executed on the graph to find the path with the lowest cumulative cost from the start node to the end node. For multi-stop routes, the algorithm is run sequentially for each segment of the journey.
+3.  **Pathfinding:** When a user requests a route, **Dijkstra's algorithm** is executed on the graph to find the path with the lowest cumulative cost from the start node to the end node. For multi-stop routes, the algorithm is run sequentially for each segment of the journey.
 4.  **Map Rendering:** The Leaflet.js library is used to render the map tiles, draw the metro lines, and place markers for each station. The calculated route is then visualized as an animated polyline on the map.
 
 ---

@@ -463,7 +463,7 @@ const PathfinderApp = () => {
 
         if (!pathResult || !pathResult.path) return;
 
-        const { path, distance } = pathResult;
+        const { path } = pathResult;
         const lineColors: Record<string, string> = { blue: '#007bff', yellow: '#ffc107', red: '#dc3545', aqua: '#00ffff' };
         let pathBounds = L.latLngBounds();
 
@@ -602,52 +602,103 @@ const PathDisplay: React.FC<{
     viaStops: ViaStop[];
     getStationById: (id: string) => Station | undefined;
 }> = ({ path, viaStops, getStationById }) => {
-    // A simplified display component. In a real app, this would be more complex.
     const lineColors = { blue: 'border-blue-500', yellow: 'border-yellow-400', red: 'border-red-500', aqua: 'border-cyan-400' };
     const lineTextColors = { blue: 'text-blue-600', yellow: 'text-yellow-600', red: 'text-red-600', aqua: 'text-cyan-600' };
     const lineBGColors = { blue: 'bg-blue-500', yellow: 'bg-yellow-400', red: 'bg-red-500', aqua: 'bg-cyan-400' };
+    
+    const viaStopsInPath = viaStops.map(v => v.stationId).filter((id): id is string => id !== null);
 
-    const viaStationIds = new Set(viaStops.map(v => v.stationId));
+    const segments: { type: 'start' | 'end' | 'change' | 'via' | 'stops'; station?: Station; prevStation?: Station; stops?: Station[] }[] = [];
+    
+    if (path.length > 0) {
+        segments.push({ type: 'start', station: getStationById(path[0]) });
+
+        let segmentStartIndex = 0;
+        let currentViaIndex = 0;
+
+        for (let i = 1; i < path.length; i++) {
+            const prevStation = getStationById(path[i-1])!;
+            const currStation = getStationById(path[i])!;
+
+            if (prevStation.line !== currStation.line) {
+                const stops = path.slice(segmentStartIndex + 1, i).map(id => getStationById(id)!);
+                if (stops.length > 0) segments.push({ type: 'stops', stops });
+                segments.push({ type: 'change', station: currStation, prevStation: prevStation });
+                segmentStartIndex = i;
+            }
+
+            if (currentViaIndex < viaStopsInPath.length && currStation.id === viaStopsInPath[currentViaIndex]) {
+                 const stops = path.slice(segmentStartIndex + 1, i).map(id => getStationById(id)!);
+                 if (stops.length > 0) segments.push({ type: 'stops', stops });
+                 segments.push({ type: 'via', station: currStation });
+                 segmentStartIndex = i;
+                 currentViaIndex++;
+             }
+        }
+        
+        const lastSegmentStops = path.slice(segmentStartIndex + 1, path.length -1).map(id => getStationById(id)!);
+        if (lastSegmentStops.length > 0) segments.push({ type: 'stops', stops: lastSegmentStops });
+        
+        segments.push({ type: 'end', station: getStationById(path[path.length - 1]) });
+    }
 
     return (
         <div>
-            {path.map((stationId, index) => {
-                const station = getStationById(stationId);
-                if (!station) return null;
-
-                const prevStation = index > 0 ? getStationById(path[index - 1]) : null;
-                const isLineChange = prevStation && prevStation.line !== station.line;
-                const isVia = viaStationIds.has(stationId);
-                const isStart = index === 0;
-                const isEnd = index === path.length - 1;
-
-                return (
-                    <div key={index} className="path-step">
-                        {isStart ? (
-                             <div className={`path-icon-start ${lineBGColors[station.line] || 'bg-gray-400'} rounded-full flex items-center justify-center`}><svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L9 5.414V17a1 1 0 102 0V5.414l4.707 4.707a1 1 0 001.414-1.414l-7-7z"></path></svg></div>
-                        ) : isEnd ? (
-                             <div className={`path-icon-end ${lineBGColors['red'] || 'bg-red-500'} rounded-full flex items-center justify-center`}><svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd"></path></svg></div>
-                        ) : isLineChange ? (
-                            <div className={`path-icon border-4 ${lineColors[prevStation!.line] || 'border-gray-400'}`}></div>
-                        ) : isVia ? (
-                            <div className="path-icon path-icon-via border-4"></div>
-                        ) : (
-                            <div className={`path-icon border-2 ${lineColors[station.line] || 'border-gray-400'}`}></div>
-                        )}
-                        
-                        {isLineChange ? (
-                            <div className="change-block">
-                                <div className="font-bold text-purple-800">Change at {station.name}</div>
-                                <div className={`text-sm font-semibold ${lineTextColors[station.line] || 'text-gray-500'}`}>Take {station.line} line</div>
+            {segments.map((segment, index) => {
+                switch (segment.type) {
+                    case 'start':
+                        return (
+                            <div key={index} className="path-step">
+                                <div className={`path-icon-start ${lineBGColors[segment.station!.line] || 'bg-gray-400'} rounded-full flex items-center justify-center`}><svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L9 5.414V17a1 1 0 102 0V5.414l4.707 4.707a1 1 0 001.414-1.414l-7-7z"></path></svg></div>
+                                <div className="font-bold text-gray-800">{segment.station!.name}</div>
                             </div>
-                        ) : (
-                            <div className="font-bold text-gray-800">{station.name}</div>
-                        )}
-
-                        {isVia && <div className="text-sm text-purple-600 font-semibold">(Via Stop)</div>}
-                        {isEnd && <div className="text-sm text-gray-500">You have arrived</div>}
-                    </div>
-                );
+                        );
+                    case 'end':
+                         return (
+                            <div key={index} className="path-step">
+                                 <div className={`path-icon-end ${lineBGColors['red'] || 'bg-red-500'} rounded-full flex items-center justify-center`}><svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd"></path></svg></div>
+                                <div className="font-bold text-gray-800">{segment.station!.name}</div>
+                                <div className="text-sm text-gray-500">You have arrived</div>
+                            </div>
+                        );
+                    case 'change':
+                        return (
+                             <div key={index} className="path-step">
+                                 <div className={`path-icon border-4 ${lineColors[segment.prevStation!.line] || 'border-gray-400'}`}></div>
+                                 <div className="change-block">
+                                     <div className="font-bold text-purple-800">Change at {segment.station!.name}</div>
+                                     <div className={`text-sm font-semibold ${lineTextColors[segment.station!.line] || 'text-gray-500'}`}>Take {segment.station!.line} line</div>
+                                 </div>
+                             </div>
+                        );
+                    case 'via':
+                        return (
+                            <div key={index} className="path-step">
+                                <div className="path-icon path-icon-via border-4"></div>
+                                <div className="font-bold text-gray-800">{segment.station!.name}</div>
+                                <div className="text-sm text-purple-600 font-semibold">(Via Stop)</div>
+                            </div>
+                        );
+                    case 'stops':
+                        const [isOpen, setIsOpen] = useState(false);
+                        const stopListId = `stop-list-${index}`;
+                        return (
+                            <div key={index} className="path-step">
+                                <div className="mb-2">
+                                     <span onClick={() => setIsOpen(!isOpen)} className="bg-gray-200 text-gray-700 text-xs font-semibold px-2.5 py-0.5 rounded-full hover:bg-gray-300 cursor-pointer">
+                                         {segment.stops!.length} stop(s)
+                                     </span>
+                                 </div>
+                                {isOpen && (
+                                     <ul id={stopListId} className="stop-list">
+                                          {segment.stops!.map(stop => <li key={stop.id} className="text-sm text-gray-600 py-0.5">{stop.name}</li>)}
+                                     </ul>
+                                )}
+                            </div>
+                        );
+                    default:
+                        return null;
+                }
             })}
         </div>
     );
@@ -678,12 +729,9 @@ const LandingPage: React.FC<{ onLaunch: () => void }> = ({ onLaunch }) => {
                         Navigate Mumbai's metro network with ease. Find the optimal route between
                         any two stations using our intelligent pathfinding tool.
                     </p>
-                    <p className="mt-4 text-sm text-gray-500">
-                        Powered by the <span className="font-semibold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-500">Slime Mold Algorithm</span>
-                    </p>
                     <button
                         onClick={onLaunch}
-                        className="mt-4 bg-white/10 text-white font-semibold py-3 px-8 rounded-full border border-white/20 hover:bg-white/20 transition-transform transform hover:scale-105"
+                        className="mt-8 bg-white/10 text-white font-semibold py-3 px-8 rounded-full border border-white/20 hover:bg-white/20 transition-transform transform hover:scale-105"
                     >
                         Launch Pathfinder
                     </button>
